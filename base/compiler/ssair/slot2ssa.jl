@@ -657,6 +657,7 @@ function construct_ssa!(ci::CodeInfo, code::Vector{Any}, ir::IRCode, domtree::Do
         end for x in 1:length(ci.slotnames)
     ]
     worklist = Tuple{Int, Int, Vector{Any}}[(1, 0, initial_incoming_vals)]
+    local item::Int
     visited = BitSet()
     type_refine_phi = BitSet()
     @timeit "SSA Rename" while !isempty(worklist)
