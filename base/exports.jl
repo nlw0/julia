@@ -780,6 +780,7 @@ export
     ismarked,
     isopen,
     isreadonly,
+    lazyreaddir,
     ltoh,
     mark,
     bytesavailable,
