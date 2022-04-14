@@ -911,27 +911,25 @@ julia> jldirs
 """
 function _readdir(f::Function, dir::AbstractString)
     # Allocate space for uv_fs_t struct
-    req = Libc.malloc(_sizeof_uv_fs)
-    try
-        # defined in sys.c, to call uv_fs_readdir, which sets errno on error.
-        err = ccall(:uv_fs_scandir, Int32, (Ptr{Cvoid}, Ptr{Cvoid}, Cstring, Cint, Ptr{Cvoid}),
-                    C_NULL, req, dir, 0, C_NULL)
-        err < 0 && uv_error("readdir($(repr(dir)))", err)
+    # req = Libc.malloc(_sizeof_uv_fs)
+    req = Vector{UInt8}(undef, _sizeof_uv_fs)
 
-        # iterate the listing into entries
-        ent = Ref{uv_dirent_t}()
-        while Base.UV_EOF != ccall(:uv_fs_scandir_next, Cint, (Ptr{Cvoid}, Ptr{uv_dirent_t}), req, ent)
-            cbreturn = f(ent[])
-            if cbreturn == false
-                break
-            end
+    # defined in sys.c, to call uv_fs_readdir, which sets errno on error.
+    err = ccall(:uv_fs_scandir, Int32, (Ptr{Cvoid}, Ptr{Cvoid}, Cstring, Cint, Ptr{Cvoid}),
+                C_NULL, req, dir, 0, C_NULL)
+    err < 0 && uv_error("readdir($(repr(dir)))", err)
+
+    # iterate the listing into entries
+    ent = Ref{uv_dirent_t}()
+    while Base.UV_EOF != ccall(:uv_fs_scandir_next, Cint, (Ptr{Cvoid}, Ptr{uv_dirent_t}), req, ent)
+        cbreturn = f(ent[])
+        if cbreturn == false
+            break
         end
-
-        # Clean up the request string
-        uv_fs_req_cleanup(req)
-    finally
-        Libc.free(req)
     end
+
+    # Clean up the request string
+    uv_fs_req_cleanup(req)
 end
 
 """
